@@ -16,9 +16,10 @@ import (
 )
 
 var config struct {
-	Path       string
-	AutoRecord bool
-	Append     bool
+	Path        string
+	FlvFileName string
+	AutoRecord  bool
+	Append      bool
 }
 var recordings sync.Map
 
@@ -50,6 +51,9 @@ func init() {
 			},
 			"Append": func(v interface{}) {
 				config.Append = v.(bool)
+			},
+			"FlvFileName": func(v interface{}) {
+				config.FlvFileName = v.(string)
 			},
 		},
 	}
@@ -133,8 +137,10 @@ func run() {
 
 func onPublish(p *Stream) {
 	if config.AutoRecord || (ExtraConfig.AutoRecordFilter != nil && ExtraConfig.AutoRecordFilter(p.StreamPath)) {
-		log.Println("save flv, is append: ", config.Append)
-		SaveFlv(p.StreamPath, config.Append)
+		flvName := strings.ReplaceAll(config.FlvFileName, `[stream]`, p.StreamName)
+		flvName = strings.ReplaceAll(flvName, `[app]`, p.AppName)
+		log.Printf("save flv %s, append: %t\n", flvName, config.Append)
+		SaveFlv(flvName, config.Append)
 	}
 }
 
