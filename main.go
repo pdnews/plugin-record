@@ -3,6 +3,7 @@ package record
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -15,8 +16,9 @@ import (
 )
 
 var config struct {
-	Path        string
-	AutoRecord  bool
+	Path       string
+	AutoRecord bool
+	Append     bool
 }
 var recordings sync.Map
 
@@ -34,7 +36,7 @@ type FileWr interface {
 }
 
 var ExtraConfig struct {
-	CreateFileFn func(filename string) (FileWr,error)
+	CreateFileFn     func(filename string) (FileWr, error)
 	AutoRecordFilter func(stream string) bool
 }
 
@@ -45,6 +47,9 @@ func init() {
 		HotConfig: map[string]func(interface{}){
 			"AutoRecord": func(v interface{}) {
 				config.AutoRecord = v.(bool)
+			},
+			"Append": func(v interface{}) {
+				config.Append = v.(bool)
 			},
 		},
 	}
@@ -128,7 +133,8 @@ func run() {
 
 func onPublish(p *Stream) {
 	if config.AutoRecord || (ExtraConfig.AutoRecordFilter != nil && ExtraConfig.AutoRecordFilter(p.StreamPath)) {
-		SaveFlv(p.StreamPath, false)
+		log.Println("save flv, is append: ", config.Append)
+		SaveFlv(p.StreamPath, config.Append)
 	}
 }
 
